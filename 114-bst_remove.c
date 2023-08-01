@@ -1,106 +1,106 @@
 #include "binary_trees.h"
-
 /**
- * bst_search - searches for a value in a Binary Search Tree
- * @tree: pointer to root of tree
- * @value: input value
- * Return: pointer to the node containing a value equals to value
+ * successor - get the next successor i mean the min node in the right subtree
+ * @node: tree to check
+ * Return: the min value of this tree
  */
-bst_t *bst_search(const bst_t *tree, int value)
+int successor(bst_t *node)
 {
-	if (!tree)
-		return (NULL);
-	while (tree)
+	int left = 0;
+
+	if (node == NULL)
 	{
-		if (value == tree->n)
-			return ((bst_t *)tree);
-		tree = value < tree->n ? tree->left
-			: tree->right;
+		return (0);
 	}
-	return ((bst_t *)tree);
-}
-
-/**
- * swap - swaps two nodes in binary tree
- * @node: first node
- * @new: second node
- * Return: pointer to root
- */
-bst_t *swap(bst_t *node, bst_t *new)
-{
-	bst_t *temp = NULL;
-	_Bool left_child = false;
-
-	if (node->parent)
-		left_child = node->parent->left == node;
-	if (new->parent && new->parent != node)
-		new->parent->left = NULL;
-	new->parent = node->parent;
-	if (node->parent)
+	else
 	{
-		if (left_child)
-			node->parent->left = new;
+		left = successor(node->left);
+		if (left == 0)
+		{
+			return (node->n);
+		}
+		return (left);
+	}
+
+}
+/**
+ * two_children - function that gets the next successor using the min
+ * value in the right subtree, and then replace the node value for
+ * this successor
+ * @root: node tat has two children
+ * Return: the value found
+ */
+int two_children(bst_t *root)
+{
+	int new_value = 0;
+
+	new_value = successor(root->right);
+	root->n = new_value;
+	return (new_value);
+}
+/**
+ *remove_type - function that removes a node depending of its children
+ *@root: node to remove
+ *Return: 0 if it has no children or other value if it has
+ */
+int remove_type(bst_t *root)
+{
+	if (!root->left && !root->right)
+	{
+		if (root->parent->right == root)
+			root->parent->right = NULL;
 		else
-			node->parent->right = new;
+			root->parent->left = NULL;
+		free(root);
+		return (0);
 	}
-	if (node->left != new)
+	else if ((!root->left && root->right) || (!root->right && root->left))
 	{
-		new->left = node->left;
-		node->left->parent = new;
+		if (!root->left)
+		{
+			if (root->parent->right == root)
+				root->parent->right = root->right;
+			else
+				root->parent->left = root->right;
+			root->right->parent = root->parent;
+		}
+		if (!root->right)
+		{
+			if (root->parent->right == root)
+				root->parent->right = root->left;
+			else
+				root->parent->left = root->left;
+			root->left->parent = root->parent;
+		}
+		free(root);
+		return (0);
 	}
-	if (node->right && node->right != new)
-	{
-		new->right = node->right;
-		node->right->parent = new;
-	}
-	temp = new;
-	while (temp->parent)
-		temp = temp->parent;
-	free(node);
-	return (temp);
+	else
+		return (two_children(root));
 }
-
 /**
- * bst_remove - removes a node from a Binary Search Tree
- * @root: pointer to root of tree
- * @value: input value
- * Return: pointer to the new root node of the tree after removing the
- * desired value
+ * bst_remove - remove a node from a BST tree
+ * @root: root of the tree
+ * @value: node with this value to remove
+ * Return: the tree changed
  */
 bst_t *bst_remove(bst_t *root, int value)
 {
-	bst_t *node, *temp;
-	_Bool left_child = false;
+	int type = 0;
 
-	if (!root)
+	if (root == NULL)
 		return (NULL);
-	node = bst_search(root, value);
-	if (!node)
-		return (NULL);
-	if (node->parent)
-		left_child = node->parent->left == node;
-	if (!node->right && !node->left)
+	if (value < root->n)
+		bst_remove(root->left, value);
+	else if (value > root->n)
+		bst_remove(root->right, value);
+	else if (value == root->n)
 	{
-		if (!node->parent)
-		{
-			free(node);
-			return (NULL);
-		}
-		if (left_child)
-			node->parent->left = NULL;
-		else
-			node->parent->right = NULL;
-		temp = node->parent;
-		while (temp->parent)
-			temp = temp->parent;
-		free(node);
-		return (temp);
-
+		type = remove_type(root);
+		if (type != 0)
+			bst_remove(root->right, type);
 	}
-	if (!node->right)
-		return (swap(node, node->left));
-	temp = node->right;
-	while (temp->left)
-		temp = temp->left;
-	return (swap(node, temp));
+	else
+		return (NULL);
+	return (root);
 }
